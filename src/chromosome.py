@@ -9,7 +9,7 @@ class ActionType(Enum):
     Types of UI interactions
     """
     CLICK = "click"
-    TYPE = "type"
+    EDIT = "edit"
     SCROLL = "scroll"
     # ...add more as we go along
 
@@ -52,7 +52,7 @@ class Action:
     data: Optional[str] = None # optional, e.g. for TYPE actions
 
     def __str__(self):
-        if self.action_type == ActionType.TYPE:
+        if self.action_type == ActionType.EDIT:
             return f"Type '{self.data}' into {self.target}"
         elif self.target:
             return f"{self.action_type.value.upper()} {self.target}"
