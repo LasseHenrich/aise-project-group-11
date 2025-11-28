@@ -57,7 +57,7 @@ class CodeGenerator:
 
         if action.action_type == ActionType.EDIT:
             if not target_selector:
-                raise ValueError("TYPE action requires a target UIElement.")
+                raise ValueError("EDIT action requires a target UIElement.")
 
             data_content = action.data if action.data else ""
             return f"page.fill('{target_selector}', '{data_content}')"
