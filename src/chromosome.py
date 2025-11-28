@@ -53,7 +53,7 @@ class Action:
 
     def __str__(self):
         if self.action_type == ActionType.EDIT:
-            return f"Type '{self.data}' into {self.target}"
+            return f"Edit {self.target} with '{self.data}'"
         elif self.target:
             return f"{self.action_type.value.upper()} {self.target}"
         else:
