@@ -78,7 +78,7 @@ class CodeGenerator:
         if ui_element.id:
             return f"#{ui_element.id}"
         elif ui_element.class_name:
-            return f".{".".join(ui_element.class_name.split())}" # "class1 class2" -> ".class1.class2"
+            return f".{'.'.join(ui_element.class_name.split())}" # "class1 class2" -> ".class1.class2"
         else:
             raise ValueError("Unhandled case:\n"
                              "UIElement must have at least an id or a class name for selector generation.")
