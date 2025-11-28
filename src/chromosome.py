@@ -36,11 +36,14 @@ class UIElement:
 
     # fallbacks
     class_name: Optional[str] = None
-    text_content: Optional[str] = None
+    text_content: Optional[str] = None # e.g. "Log in"
 
     def __str__(self):
         """
-        Unique string representation for the UIElement, in the format of a selector
+        Unique string representation for the UIElement.
+        Note that these are not CSS selectors, but meant for human readability,
+        since UIElementType can't be 1:1 mapped to HTML tags.
+        (code_gen.py is responsible for generating actual selectors)
         """
         if self.id:
             return f"{self.element_type.value}[id='{self.id}']"

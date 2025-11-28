@@ -18,22 +18,32 @@ class Crawler:
 
         # UIElementType to CSS selector
         mappings = [
-            (UIElementType.BUTTON, "button"),
-            (UIElementType.INPUT, "input, textarea"),
+            (UIElementType.BUTTON, "button, input[type='submit'], input[type='button']"),
+            (UIElementType.INPUT, "input:not([type='submit']):not([type='button']), textarea"),
             (UIElementType.LINK, "a"),
         ]
 
         for element_type, selector in mappings:
             handles = page.query_selector_all(selector)
-            for handle in handles:
-                element_id = handle.get_attribute("id") or ""
-                element_class = handle.get_attribute("class") or ""
 
-                if not element_id and not element_class:
+            for handle in handles:
+                element_id = handle.get_attribute("id")
+                element_name = handle.get_attribute("name")
+                element_class = handle.get_attribute("class")
+                element_text_content = handle.text_content()
+
+                if not element_id and not element_name and\
+                    not element_class and not element_text_content:
                     print("Warning: Found element without id or class, which is currently not supported. Skipping...")
                     continue
 
-                ui_element = UIElement(element_id, element_class, element_type)
+                ui_element = UIElement(
+                    element_type=element_type,
+                    id=element_id,
+                    name=element_name,
+                    class_name=element_class,
+                    text_content=element_text_content
+                )
                 found_elements.append(ui_element)
 
         return found_elements
