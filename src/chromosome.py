@@ -49,11 +49,11 @@ class Action:
     """
     action_type: ActionType
     target: Optional[UIElement] = None # optional, as action can e.g. just be a scroll
-    data: Optional[str] = None # optional, e.g. for TYPE actions
+    data: Optional[str] = None # optional, e.g. for EDIT actions
 
     def __str__(self):
         if self.action_type == ActionType.EDIT:
-            return f"Type '{self.data}' into {self.target}"
+            return f"Edit {self.target} with '{self.data}'"
         elif self.target:
             return f"{self.action_type.value.upper()} {self.target}"
         else:
