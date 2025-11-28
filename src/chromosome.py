@@ -31,18 +31,17 @@ class UIElement:
     element_type: UIElementType # type of the element, needs to be considered when performing actions
 
     # selectors ordered by stability (priority)
-    id: Optional[str] = None  # id of the HTML element, e.g. id="username"
-    name: Optional[str] = None # name of the HTML element, e.g. name="username"
+    id: Optional[str] = None  # e.g. id="username"
+    name: Optional[str] = None # e.g. name="username"
 
     # fallbacks
-    class_name: Optional[str] = None
+    class_name: Optional[str] = None # e.g. class="radius"
     text_content: Optional[str] = None # e.g. "Log in"
 
     def __str__(self):
         """
-        Unique string representation for the UIElement.
-        Note that these are not CSS selectors, but meant for human readability,
-        since UIElementType can't be 1:1 mapped to HTML tags.
+        String representation for the UIElement, prioritizing uniqueness and stability.
+        Note that these are not CSS selectors, but meant for human readability.
         (code_gen.py is responsible for generating actual selectors)
         """
         if self.id:
@@ -53,7 +52,7 @@ class UIElement:
             return f"{self.element_type.value}[class='{self.class_name}']"
         elif self.text_content:
             return f"{self.element_type.value}[text='{self.text_content[:15]}...']"
-        raise ValueError("UIElement must have at least one identifying attribute.")
+        raise f"{self.element_type.value}[unknown selector]" # fallback, shouldn't happen in practice, as crawler skips such elements
 
     def __deepcopy__(self):
         return UIElement(

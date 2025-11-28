@@ -6,12 +6,12 @@ from src.chromosome import UIElement, UIElementType
 
 class Crawler:
     """
-    Scans a web page to identify interactive UI elements.
+    Scans a web page to identify interactable UI elements.
     """
 
     def scan_page(self, page: Page) -> List[UIElement]:
         """
-        Scans a web page to identify interactive UI elements.
+        Scans a web page to identify interactable UI elements.
         Returns a list of UIElement instances.
         """
         found_elements: List[UIElement] = []
@@ -34,7 +34,7 @@ class Crawler:
 
                 if not element_id and not element_name and\
                     not element_class and not element_text_content:
-                    print("Warning: Found element without id or class, which is currently not supported. Skipping...")
+                    print("Warning: Found element without any identifiable attributes, skipping...")
                     continue
 
                 ui_element = UIElement(

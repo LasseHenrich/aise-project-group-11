@@ -89,7 +89,7 @@ class CodeGenerator:
             return f"text='{safe_text_content}'"
 
         raise ValueError("Unhandled case:\n"
-                         "UIElement must have at least an id or a class name for selector generation.")
+                         "UIElement must have at least one identifiable attribute for selector generation.")
 
 
 # Example usage
