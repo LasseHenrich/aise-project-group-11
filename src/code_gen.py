@@ -64,8 +64,9 @@ class CodeGenerator:
 
         if action.action_type == ActionType.SCROLL:
             if not target_selector:
-                return f"page.locator('{target_selector}').scroll_into_view_if_needed()"
-            return "page.mouse.wheel(0, 500)" # todo: improve scroll handling by using content as custom scroll amount
+                return "page.mouse.wheel(0, 500)"
+            return f"page.locator('{target_selector}').scroll_into_view_if_needed()"
+            # todo: improve scroll handling by using content as custom scroll amount
 
         raise ValueError(f"Unhandled action type: {action.action_type}")
 
