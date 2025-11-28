@@ -55,7 +55,7 @@ class CodeGenerator:
                 raise ValueError("CLICK action requires a target UIElement.")
             return f"page.click('{target_selector}')"
 
-        if action.action_type == ActionType.TYPE:
+        if action.action_type == ActionType.EDIT:
             if not target_selector:
                 raise ValueError("TYPE action requires a target UIElement.")
 
@@ -93,8 +93,8 @@ if __name__ == "__main__":
     success_message = UIElement(id="flash", class_name="flash success",
                                            element_type=UIElementType.LINK)
 
-    a1 = Action(action_type=ActionType.TYPE, target=input_user, data="tomsmith")
-    a2 = Action(action_type=ActionType.TYPE, target=input_pass, data="SuperSecretPassword!")
+    a1 = Action(action_type=ActionType.EDIT, target=input_user, data="tomsmith")
+    a2 = Action(action_type=ActionType.EDIT, target=input_pass, data="SuperSecretPassword!")
     a3 = Action(action_type=ActionType.CLICK, target=btn_login)
     a4 = Action(action_type=ActionType.CLICK, target=btn_logout)
     sample_chromosome = Chromosome(actions=[a1, a2, a3, a4])
