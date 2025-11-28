@@ -1,7 +1,7 @@
 import copy
 from types import CodeType
 
-from src.chromosome import Chromosome, Action, UIElement, ActionType, UIElementType
+from chromosome import Chromosome, Action, UIElement, ActionType, UIElementType
 
 
 class CodeGenerator:
