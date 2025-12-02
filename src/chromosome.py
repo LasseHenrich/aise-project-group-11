@@ -52,7 +52,8 @@ class UIElement:
             return f"{self.element_type.value}[class='{self.class_name}']"
         elif self.text_content:
             return f"{self.element_type.value}[text='{self.text_content[:15]}...']"
-        raise f"{self.element_type.value}[unknown selector]" # fallback, shouldn't happen in practice, as crawler skips such elements
+        return f"{self.element_type.value}[unknown selector]"
+
 
     def __deepcopy__(self):
         return UIElement(
