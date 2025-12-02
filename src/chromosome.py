@@ -26,20 +26,41 @@ class UIElementType(Enum):
 class UIElement:
     """
     Represents a targetable UI element.
-    A UI element is found by crawling and saving id + class for later selection.
+    When crawling (via str()), stable attributes (id, name) are prioritized over volatile ones (class).
     """
-    id: str # id of the HTML element, used for selecting
-    class_name: str # class of the HTML element, for fallback in case no id is defined
     element_type: UIElementType # type of the element, needs to be considered when performing actions
 
+    # selectors ordered by stability (priority)
+    id: Optional[str] = None  # e.g. id="username"
+    name: Optional[str] = None # e.g. name="username"
+
+    # fallbacks
+    class_name: Optional[str] = None # e.g. class="radius"
+    text_content: Optional[str] = None # e.g. "Log in"
+
     def __str__(self):
-        return f"{self.element_type.value}[id='{self.id}', class='{self.class_name}']"
+        """
+        String representation for the UIElement, prioritizing uniqueness and stability.
+        Note that these are not CSS selectors, but meant for human readability.
+        (code_gen.py is responsible for generating actual selectors)
+        """
+        if self.id:
+            return f"{self.element_type.value}[id='{self.id}']"
+        elif self.name:
+            return f"{self.element_type.value}[name='{self.name}']"
+        elif self.class_name:
+            return f"{self.element_type.value}[class='{self.class_name}']"
+        elif self.text_content:
+            return f"{self.element_type.value}[text='{self.text_content[:15]}...']"
+        raise f"{self.element_type.value}[unknown selector]" # fallback, shouldn't happen in practice, as crawler skips such elements
 
     def __deepcopy__(self):
         return UIElement(
+            element_type=self.element_type,
             id=self.id,
+            name=self.name,
             class_name=self.class_name,
-            element_type=self.element_type
+            text_content=self.text_content
         )
 
 @dataclass
