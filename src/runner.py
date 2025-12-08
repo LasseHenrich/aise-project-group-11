@@ -38,70 +38,96 @@ class TestRunner:
 
     def run_chromosome(self, chromosome: Chromosome, rescan_between_actions: bool = False) -> dict:
         """
-        Execute a chromosome and collect execution data.
-        
-        Args:
-            chromosome: The test sequence to execute
-            rescan_between_actions: If True, crawler rescans page after each action
-        
-        Returns:
-            Dictionary with execution results for fitness calculation
+        Execute a chromosome and collect execution data, differentiating between
+        application bugs and simple execution errors.
         """
         results = {
             'urls': [],
             'states': [],
-            'errors': [],
+            'execution_errors': [],  # For timeouts, element not found, etc.
+            'js_errors': [],         # For uncaught JS exceptions
+            'http_errors': [],       # For 5xx server errors
+            'crashed': False,        # If the page crashes
             'action_results': [],
             'available_elements': []
         }
 
-        # Record initial state
-        results['urls'].append(self.page.url)
-        results['states'].append(self._get_page_state())
+        # --- Event Handlers ---
+        def handle_console(msg):
+            if msg.type == 'error':
+                results['js_errors'].append(f"JS Error: {msg.text}")
 
-        # Use chromosome.actions since Chromosome isn't directly iterable
-        for i, action in enumerate(chromosome.actions):
-            action_result = {
-                'step': i,
-                'action': str(action),
-                'success': False,
-                'error': None
-            }
+        def handle_response(response):
+            if response.status >= 500:
+                results['http_errors'].append(f"HTTP {response.status} on {response.url}")
 
-            try:
-                self._execute_action(action)
-                action_result['success'] = True
+        def handle_crash(page):
+            results['crashed'] = True
 
-                # Wait for page to stabilize
-                self.page.wait_for_load_state('domcontentloaded', timeout=3000)
+        self.page.on('console', handle_console)
+        self.page.on('response', handle_response)
+        self.page.on('crash', handle_crash)
 
-                # Record new state
-                current_url = self.page.url
-                current_state = self._get_page_state()
+        try:
+            # Record initial state
+            results['urls'].append(self.page.url)
+            results['states'].append(self._get_page_state())
 
-                if current_url not in results['urls']:
-                    results['urls'].append(current_url)
-
-                if current_state not in results['states']:
-                    results['states'].append(current_state)
-
-                # Optionally rescan for new elements
-                if rescan_between_actions:
-                    new_elements = self.crawler.scan_page(self.page)
-                    results['available_elements'] = new_elements
-
-            except Exception as e:
-                action_result['success'] = False
-                action_result['error'] = str(e)
-                results['errors'].append({
+            # Use chromosome.actions since Chromosome isn't directly iterable
+            for i, action in enumerate(chromosome.actions):
+                action_result = {
                     'step': i,
                     'action': str(action),
-                    'error': str(e)
-                })
+                    'success': False,
+                    'error': None
+                }
 
-            results['action_results'].append(action_result)
+                try:
+                    # If the page has crashed, we can't continue
+                    if results['crashed']:
+                        raise Exception("Page crashed, cannot continue execution.")
 
-        return results
+                    self._execute_action(action)
+                    action_result['success'] = True
+
+                    self.page.wait_for_load_state('domcontentloaded', timeout=3000)
+
+                    # Record new state
+                    current_url = self.page.url
+                    current_state = self._get_page_state()
+
+                    if current_url not in results['urls']:
+                        results['urls'].append(current_url)
+
+                    if current_state not in results['states']:
+                        results['states'].append(current_state)
+
+                    if rescan_between_actions:
+                        new_elements = self.crawler.scan_page(self.page)
+                        results['available_elements'] = new_elements
+
+                except Exception as e:
+                    action_result['success'] = False
+                    action_result['error'] = str(e)
+                    results['execution_errors'].append({
+                        'step': i,
+                        'action': str(action),
+                        'error': str(e)
+                    })
+                    results['action_results'].append(action_result)
+                    # Stop executing this chromosome on the first failure
+                    return results
+
+                results['action_results'].append(action_result)
+
+            return results
+
+        finally:
+            # Clean up listeners to avoid them stacking up on subsequent runs
+            self.page.remove_listener('console', handle_console)
+            self.page.remove_listener('response', handle_response)
+            self.page.remove_listener('crash', handle_crash)
+
 
     def _execute_action(self, action: Action):
         """

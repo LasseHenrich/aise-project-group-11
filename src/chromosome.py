@@ -55,7 +55,7 @@ class UIElement:
         return f"{self.element_type.value}[unknown selector]"
 
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return UIElement(
             element_type=self.element_type,
             id=self.id,
@@ -81,10 +81,10 @@ class Action:
         else:
             return f"{self.action_type.value.upper()}"
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return Action(
             action_type=self.action_type,
-            target=copy.deepcopy(self.target),
+            target=copy.deepcopy(self.target, memo) if self.target is not None else None,
             data=self.data
         )
 
@@ -108,11 +108,12 @@ class Chromosome:
 
     def __str__(self):
         fitness_str = f"{self.fitness:.3f}" if self.fitness is not None else "??"
-        return f"Chromosome(fitness={fitness_str}, length={len(self)}])"
+        return (f"Chromosome(fitness={fitness_str}, length={len(self)}, "
+                f"actions=[\n{',\n'.join(str(a) for a in self.actions)}\n])")
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return Chromosome(
-            actions=[copy.deepcopy(action) for action in self.actions]
+            actions=[copy.deepcopy(action, memo) for action in self.actions]
         )
 
     def add_action(self, action: Action):
