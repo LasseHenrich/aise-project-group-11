@@ -301,9 +301,8 @@ class MessyGeneticAlgorithm:
         return best_overall_chromosome
 
 
-# Example usage
-# todo: Add a main.py file calling the genetic algorithm with a given URL and
-# using code_gen to create an executable Playwright script from the best chromosome
+# todo: using code_gen to create an executable Playwright script from the best chromosome
+# Test GA
 if __name__ == "__main__":
     
     # potential todo: experiment with different hyperparameters
