@@ -36,7 +36,7 @@ python main.py --url <test website url> --generations <size of generation> --pop
 ```
 * Default generation size: 50
 * Default population size: 50
-* Example Websites for Testing:
+* Example Websites for Testing:  
 https://the-internet.herokuapp.com/  
 https://www.saucedemo.com/  
 https://demoqa.com/  
