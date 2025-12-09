@@ -3,8 +3,10 @@
 import copy
 import random
 from src.chromosome import Chromosome, Action, ActionType, UIElementType, PageState
+
 from src.runner import TestRunner
 from src.crawler import Crawler
+from src.fitness import FitnessCalculator
 
 
 class MessyGeneticAlgorithm:
@@ -25,6 +27,8 @@ class MessyGeneticAlgorithm:
         self.population: list[Chromosome] = []
         self.runner = TestRunner(url, headless=True)
         self.crawler = Crawler()
+
+        self.fitness_calculator = FitnessCalculator()
 
     def _initialize_population(self):
         """
@@ -121,6 +125,9 @@ class MessyGeneticAlgorithm:
         # Calculate bug bounty
         bug_bounty = 0
 
+        # Collect filtered (non-noisy) errors
+        filtered_errors = []
+
         for error in run_results.get("http_errors", []):
             status = error["status"]
             url = error["url"]
@@ -138,11 +145,26 @@ class MessyGeneticAlgorithm:
 
             if not self._error_is_noise(url):
                 bug_bounty += 150  # actual JS (or CSS) crashes
+                filtered_errors.append(error)   # add to list for FitnessCalculator
             # otherwise probably blocked trackers again...
 
         len_penalty = -len(chromosome.actions) # low valuation, kind of functions as a tiebreaker
 
-        fitness = base_fitness + bug_bounty + len_penalty
+        # Build execution_result in the shape fitness.py expects
+        urls = run_results.get("visited_urls", []) or run_results.get("urls", [])
+        unique_states = run_results.get("unique_states", [])
+
+        execution_result = {
+            "urls": urls,
+            "states": [state.hash for state in unique_states],  # use state hash as ID
+            "errors": filtered_errors,
+        }
+
+        # Extra score from FitnessCalculator
+        extra_score = self.fitness_calculator.evaluate(chromosome, execution_result)
+
+        fitness = base_fitness + bug_bounty + len_penalty + extra_score
+        
         return max(0, fitness)
 
     @staticmethod
