@@ -74,7 +74,7 @@ After running, the GA prints:
 - Fitness score  
 - Action sequence  
 
-* Example output:
+* Example output:  
 CLICK link[text='Login']  
 EDIT input[id='username']  
 CLICK button[class='submit']
