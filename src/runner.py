@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright, Page, Browser, Playwright
 from typing import Optional
 import hashlib
 
-from src.chromosome import Chromosome, Action, ActionType, UIElement, UIElementType
+from src.chromosome import Chromosome, Action, ActionType, UIElement, UIElementType, PageState
 from src.crawler import Crawler
 
 
@@ -43,11 +43,10 @@ class TestRunner:
         """
         results = {
             'urls': [],
-            'states': [],
-            'execution_errors': [],  # For timeouts, element not found, etc.
+            'unique_states': [],
             'js_errors': [],         # For uncaught JS exceptions
             'http_errors': [],       # For 5xx server errors
-            'crashed': False,        # If the page crashes
+            'crashed': False,        # If the page crashes ~> Invalid chromosome
             'action_results': [],
             'available_elements': []
         }
@@ -55,11 +54,17 @@ class TestRunner:
         # --- Event Handlers ---
         def handle_console(msg):
             if msg.type == 'error':
-                results['js_errors'].append(f"JS Error: {msg.text}")
+                results['js_errors'].append({
+                    'text': msg.text, # not used, just for debugging (like some other fields here...)
+                    'url': msg.location["url"]
+                })
 
         def handle_response(response):
-            if response.status >= 500:
-                results['http_errors'].append(f"HTTP {response.status} on {response.url}")
+            if response.status >= 400:
+                results['http_errors'].append({
+                    'status': response.status,
+                    'url': response.url
+                })
 
         def handle_crash(page):
             results['crashed'] = True
@@ -71,23 +76,24 @@ class TestRunner:
         try:
             # Record initial state
             results['urls'].append(self.page.url)
-            results['states'].append(self._get_page_state())
+            results['unique_states'].append(self._get_page_state())
 
-            # Use chromosome.actions since Chromosome isn't directly iterable
-            for i, action in enumerate(chromosome.actions):
-                action_result = {
-                    'step': i,
-                    'action': str(action),
-                    'success': False,
-                    'error': None
-                }
+            try:
+                # Use chromosome.actions since Chromosome isn't directly iterable
+                for i, action in enumerate(chromosome.actions):
+                    action_result = {
+                        'step': i,
+                        'action': str(action),
+                        'success': False,
+                        'error': None,
+                        'resulting_state': PageState
+                    }
 
-                try:
                     # If the page has crashed, we can't continue
                     if results['crashed']:
                         raise Exception("Page crashed, cannot continue execution.")
 
-                    self._execute_action(action)
+                    self.execute_action(action)
                     action_result['success'] = True
 
                     self.page.wait_for_load_state('domcontentloaded', timeout=3000)
@@ -96,29 +102,23 @@ class TestRunner:
                     current_url = self.page.url
                     current_state = self._get_page_state()
 
+                    action_result['resulting_state'] = current_state
+
                     if current_url not in results['urls']:
                         results['urls'].append(current_url)
 
-                    if current_state not in results['states']:
-                        results['states'].append(current_state)
+                    if current_state.hash not in [state.hash for state in results['unique_states']]:
+                        results['unique_states'].append(current_state)
 
                     if rescan_between_actions:
                         new_elements = self.crawler.scan_page(self.page)
                         results['available_elements'] = new_elements
 
-                except Exception as e:
-                    action_result['success'] = False
-                    action_result['error'] = str(e)
-                    results['execution_errors'].append({
-                        'step': i,
-                        'action': str(action),
-                        'error': str(e)
-                    })
                     results['action_results'].append(action_result)
-                    # Stop executing this chromosome on the first failure
-                    return results
 
-                results['action_results'].append(action_result)
+            except Exception as e:
+                results['crashed'] = True
+                return results
 
             return results
 
@@ -129,14 +129,14 @@ class TestRunner:
             self.page.remove_listener('crash', handle_crash)
 
 
-    def _execute_action(self, action: Action):
+    def execute_action(self, action: Action):
         """
         Execute a single action on the page.
         
         Raises:
             Exception: If action fails (element not found, timeout, etc.)
         """
-        selector = self._get_selector(action.target) if action.target else None
+        selector = self.get_selector(action.target) if action.target else None
 
         if action.action_type == ActionType.CLICK:
             if not selector:
@@ -159,9 +159,10 @@ class TestRunner:
         else:
             raise ValueError(f"Unhandled action type: {action.action_type}")
 
-    def _get_selector(self, ui_element: UIElement) -> str:
+    @staticmethod
+    def get_selector(ui_element: UIElement) -> str:
         """
-        Generate CSS selector for a UIElement.
+        Determines and returns the best CSS selector for a UIElement.
         Hierarchy: id > name > class_name > text_content
         """
         if ui_element.id:
@@ -171,23 +172,60 @@ class TestRunner:
             return f"[name='{ui_element.name}']"
 
         if ui_element.class_name:
-            return f".{'.'.join(ui_element.class_name.split())}"
+            return f".{'.'.join(ui_element.class_name.split())}"  # "class1 class2" -> ".class1.class2"
 
         if ui_element.text_content:
-            safe_text = ui_element.text_content.replace("'", "\\'")
-            return f"text='{safe_text}'"
+            safe_text_content = ui_element.text_content.replace("'", "\\'")  # to avoid injection issues
+            return f"text='{safe_text_content}'"
 
         raise ValueError("UIElement has no identifiable selector")
 
-    def _get_page_state(self) -> str:
+    def _get_page_state(self) -> PageState:
         """
         Create a hash representing the current page state.
         Used for detecting unique states during execution.
         """
+        state_hash = self._get_page_hash()
+        available_elements = self.get_current_elements()
+        return PageState(hash=state_hash, available_elements=available_elements)
+
+    def _get_page_hash(self) -> str:
+        # 1. Force DOM values into HTML attributes so page.content() sees them
+        self.page.evaluate("""() => {
+                    // Handle Inputs and Textareas
+                    document.querySelectorAll('input, textarea').forEach(el => {
+                        // Determine if it's a checkbox/radio or text input
+                        if (el.type === 'checkbox' || el.type === 'radio') {
+                            if (el.checked) {
+                                el.setAttribute('checked', 'checked');
+                            } else {
+                                el.removeAttribute('checked');
+                            }
+                        } else {
+                            // Set the 'value' attribute to the current property value
+                            el.setAttribute('value', el.value);
+                        }
+                    });
+
+                    // Handle Select dropdowns
+                    document.querySelectorAll('select').forEach(el => {
+                        const options = el.querySelectorAll('option');
+                        options.forEach(opt => {
+                            if (opt.selected) {
+                                opt.setAttribute('selected', 'selected');
+                            } else {
+                                opt.removeAttribute('selected');
+                            }
+                        });
+                    });
+                }""")
+
         url = self.page.url
         html = self.page.content()
         state_str = f"{url}::{html}"
-        return hashlib.md5(state_str.encode()).hexdigest()
+
+        state_hash = hashlib.md5(state_str.encode()).hexdigest()
+        return state_hash
 
     def get_current_elements(self) -> list[UIElement]:
         """Get all interactive elements on current page."""

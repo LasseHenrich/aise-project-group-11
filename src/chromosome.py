@@ -88,17 +88,38 @@ class Action:
             data=self.data
         )
 
+@dataclass
+class PageState:
+    """
+    Represents the state of a web page at a given point in time.
+    Note that the hash is very specific, resulting in lots of unique PageStates.
+    This results in a "pessimistic" crossover, which prioritizes generating valid sequences over doing it
+    based on some chance (which would be "optimistically")
+    """
+    hash: str
+    available_elements: list[UIElement]
+
+    def __deepcopy__(self, memo):
+        return PageState(
+            hash=self.hash,
+            available_elements=[copy.deepcopy(element, memo) for element in self.available_elements]
+        )
+
 class Chromosome:
     """
     Sequence of actions that can be executed on a UI
     """
+    actions: list[Action]
+    all_states: list[PageState]
+    fitness: Optional[float]
 
-    def __init__(self, actions=None):
-        if actions is None:
-            actions = []
+    def __init__(self, actions, all_states=None, fitness=None):
+        if all_states is None:
+            all_states = [] # usually to be filled during execution, initial states + all resulting states
+
         self.actions = actions
-        self.fitness = None
-        # ...potentially more attributes for tracking performance metrics
+        self.all_states = all_states
+        self.fitness = fitness
 
     def __len__(self):
         return len(self.actions)
@@ -113,7 +134,9 @@ class Chromosome:
 
     def __deepcopy__(self, memo):
         return Chromosome(
-            actions=[copy.deepcopy(action, memo) for action in self.actions]
+            actions=[copy.deepcopy(action, memo) for action in self.actions],
+            all_states=[copy.deepcopy(state, memo) for state in self.all_states],
+            fitness=self.fitness
         )
 
     def add_action(self, action: Action):
