@@ -140,6 +140,8 @@ class MessyGeneticAlgorithm:
             elif 400 <= status < 500:
                 bug_bounty += 20  # broken links / bad requests...
 
+            filtered_errors.append(error)
+
         for error in run_results.get("js_errors", []):
             url = error["url"]
 
