@@ -1,5 +1,5 @@
 # AISE Project - Group 11
-Automated Web UI Testing using a Messy Genetic Algorithm
+**Automated Web UI Testing using a Messy Genetic Algorithm**
 
 ## About the Project
 This project attempts to automatically generate web UI test sequences using a Messy Genetic Algorithm.  
@@ -62,12 +62,12 @@ https://www.saucedemo.com/
 https://demoqa.com/  
 https://automationexercise.com/
 
-#### Run Examples
+### Run Examples
 ```commandline
 python main.py --url https://the-internet.herokuapp.com/ --generations 30 --population 40
 ```
 
-#### Output
+### Output
 After running, the GA prints:
 
 - Best chromosome per generation  
