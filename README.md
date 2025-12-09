@@ -34,10 +34,9 @@ python playwright_setup_test.py
 ```commandline
 python main.py --url <test website url> --generations <size of generation> --population <size of population>
 ```
-#### Default generation size: 50
-#### Default population size: 50
+* Default generation size: 50 / Default population size: 50
 #### Example Websites for Testing:
-https://the-internet.herokuapp.com/
-https://www.saucedemo.com/
-https://demoqa.com/
+https://the-internet.herokuapp.com/\\
+https://www.saucedemo.com/\\
+https://demoqa.com/\\
 https://automationexercise.com/
