@@ -4,6 +4,7 @@ from typing import Optional
 import copy
 
 
+# potential todo: Add more action types. Also SCROLL is currently not actually supported in the code
 class ActionType(Enum):
     """
     Types of UI interactions
@@ -13,6 +14,7 @@ class ActionType(Enum):
     SCROLL = "scroll"
     # ...add more as we go along
 
+# potential todo: Support more types
 class UIElementType(Enum):
     """
     Types of UI elements
@@ -94,7 +96,7 @@ class PageState:
     Represents the state of a web page at a given point in time.
     Note that the hash is very specific, resulting in lots of unique PageStates.
     This results in a "pessimistic" crossover, which prioritizes generating valid sequences over doing it
-    based on some chance (which would be "optimistically")
+    based on some chance (which would be "optimistically") ~> we should experiment with different strategies
     """
     hash: str
     available_elements: list[UIElement]

@@ -36,10 +36,15 @@ class TestRunner:
         if self.playwright:
             self.playwright.stop()
 
-    def run_chromosome(self, chromosome: Chromosome, rescan_between_actions: bool = False) -> dict:
+    def run_chromosome(self, chromosome: Chromosome) -> dict:
         """
-        Execute a chromosome and collect execution data, differentiating between
-        application bugs and simple execution errors.
+         Execute a chromosome and collect execution data.
+
+        Args:
+            chromosome: The test sequence to execute
+
+        Returns:
+            Dictionary with execution results for fitness calculation
         """
         results = {
             'urls': [],
@@ -51,11 +56,10 @@ class TestRunner:
             'available_elements': []
         }
 
-        # --- Event Handlers ---
         def handle_console(msg):
             if msg.type == 'error':
                 results['js_errors'].append({
-                    'text': msg.text, # not used, just for debugging (like some other fields here...)
+                    'text': msg.text, # not used, just for debugging/monitoring (like some other fields here...)
                     'url': msg.location["url"]
                 })
 
@@ -79,14 +83,13 @@ class TestRunner:
             results['unique_states'].append(self._get_page_state())
 
             try:
-                # Use chromosome.actions since Chromosome isn't directly iterable
                 for i, action in enumerate(chromosome.actions):
                     action_result = {
                         'step': i,
                         'action': str(action),
                         'success': False,
                         'error': None,
-                        'resulting_state': PageState
+                        'resulting_state': None
                     }
 
                     # If the page has crashed, we can't continue
@@ -109,10 +112,6 @@ class TestRunner:
 
                     if current_state.hash not in [state.hash for state in results['unique_states']]:
                         results['unique_states'].append(current_state)
-
-                    if rescan_between_actions:
-                        new_elements = self.crawler.scan_page(self.page)
-                        results['available_elements'] = new_elements
 
                     results['action_results'].append(action_result)
 
@@ -190,7 +189,7 @@ class TestRunner:
         return PageState(hash=state_hash, available_elements=available_elements)
 
     def _get_page_hash(self) -> str:
-        # 1. Force DOM values into HTML attributes so page.content() sees them
+        # force DOM values into HTML attributes so page.content() sees them
         self.page.evaluate("""() => {
                     // Handle Inputs and Textareas
                     document.querySelectorAll('input, textarea').forEach(el => {

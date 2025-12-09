@@ -7,7 +7,8 @@ from src.crawler import Crawler
 
 class MessyGeneticAlgorithm:
     """
-    Central GA class implementing a messy genetic algorithm
+    Central GA class implementing a messy genetic algorithm.
+    Potential todo: Add support for a "static" start action sequence, like a login, which is executed for every chromosome.
     """
 
     def __init__(self, url: str, population_size: int = 50, generations: int = 100, tournament_size: int = 5, max_chromosome_length: int = 30, mutation_rate: float = 0.1, elitism_count: int = 1):
@@ -30,7 +31,7 @@ class MessyGeneticAlgorithm:
         2. By performing random walks on the initial page to create short valid sequences,
         in case the initial page has fewer interactive elements than the desired population size.
         """
-        print("Initializing population...")
+        print("Initializing population")
         initial_elements = self.runner.get_current_elements()
 
         for element in initial_elements:
@@ -89,7 +90,7 @@ class MessyGeneticAlgorithm:
         - Standard reward for successful exploration (new states).
         Also stores discovered states for building block discovery.
         """
-        print("Evaluating fitness...")
+        print("Evaluating Chromosomes")
         for chromosome in self.population:
             self.runner.reset()
             results = self.runner.run_chromosome(chromosome)
@@ -107,8 +108,7 @@ class MessyGeneticAlgorithm:
             resulting_states.append(state)
         return [initial_state] + resulting_states
 
-    @staticmethod
-    def _calculate_fitness_from_run(chromosome: Chromosome, run_results: dict) -> float:
+    def _calculate_fitness_from_run(self, chromosome: Chromosome, run_results: dict) -> float:
         if run_results['crashed']: # there are many safeguards against crashes; these should only occur because of non-determinism
             return -1  # should not be selected for reproduction
 
@@ -117,16 +117,12 @@ class MessyGeneticAlgorithm:
 
         # Calculate bug bounty
         bug_bounty = 0
-        noise_patterns = [
-            "google-analytics", "doubleclick", "facebook", "gtm",
-            "fbevents", "pixel", "ads", "telemetry", "cors", "optimizely"
-        ]
+
         for error in run_results.get("http_errors", []):
             status = error["status"]
             url = error["url"]
 
-            is_noise = any(p in url.lower() for p in noise_patterns)
-            if is_noise:
+            if self._error_is_noise(url):
                 continue
 
             if 500 <= status < 600:
@@ -136,9 +132,8 @@ class MessyGeneticAlgorithm:
 
         for error in run_results.get("js_errors", []):
             url = error["url"]
-            is_noise = any(p in url.lower() for p in noise_patterns)
 
-            if not is_noise:
+            if not self._error_is_noise(url):
                 bug_bounty += 150  # actual JS (or CSS) crashes
             # otherwise probably blocked trackers again...
 
@@ -147,11 +142,19 @@ class MessyGeneticAlgorithm:
         fitness = base_fitness + bug_bounty + len_penalty
         return max(0, fitness)
 
+    @staticmethod
+    def _error_is_noise(url: str) -> bool:
+        noise_patterns = [
+            "google-analytics", "doubleclick", "facebook", "gtm",
+            "fbevents", "pixel", "ads", "telemetry", "cors", "optimizely"
+        ]
+        return any(p in url.lower() for p in noise_patterns)
+
     def _selection(self) -> list[Chromosome]:
         """
         Selects the best chromosomes for reproduction using tournament selection.
         """
-        print("Selecting parents...")
+        print("Selecting parents")
         parents = []
         for _ in range(self.population_size):
             tournament = random.sample(self.population, self.tournament_size)
@@ -194,6 +197,7 @@ class MessyGeneticAlgorithm:
 
         return child
 
+    # potential todo: experiment with different strategies / rates
     def _mutate(self, chromosome: Chromosome) -> Chromosome:
         """
         Applies random changes to a chromosome based on the mutation rate.
@@ -242,9 +246,9 @@ class MessyGeneticAlgorithm:
 
     def run(self):
         """
-        Main evolutionary loop.
+        Main evolutionary loop, entry point for this class
         """
-        print("Starting Genetic Algorithm...")
+        print("Starting Genetic Algorithm")
         self.runner.start()
         best_overall_chromosome = None
 
@@ -254,8 +258,6 @@ class MessyGeneticAlgorithm:
             print(f"\n----- Generation {generation + 1}/{self.generations} -----")
 
             self._evaluate_chromosome()
-
-            # Sort population by fitness, descending
             self.population.sort(key=lambda x: x.fitness if x.fitness is not None else -1, reverse=True)
             
             if self.population and self.population[0].fitness is not None:
@@ -274,17 +276,16 @@ class MessyGeneticAlgorithm:
             
             next_generation = []
 
-            # Elitism: carry over the best N chromosomes
+            # carry over the best N chromosomes
             for i in range(min(self.elitism_count, len(self.population))):
                 next_generation.append(copy.deepcopy(self.population[i]))
 
-            # Create the rest of the new generation
+            # create the rest of the new generation
             while len(next_generation) < self.population_size:
                 parent1 = random.choice(parents)
                 parent2 = random.choice(parents)
 
                 child = self._crossover(parent1, parent2)
-                
                 child = self._mutate(child)
 
                 next_generation.append(child)
@@ -292,19 +293,26 @@ class MessyGeneticAlgorithm:
             self.population = next_generation
 
         print("\nGenetic Algorithm finished.")
-        if best_overall_chromosome and best_overall_chromosome.fitness is not None:
-            print(f"\nBest chromosome found: {best_overall_chromosome}:")
-        else:
-            print("\nNo effective chromosome was found.")
-            
         self.runner.stop()
 
+        return best_overall_chromosome
+
+
 # Example usage
+# todo: Add a main.py file calling the genetic algorithm with a given URL and
+# using code_gen to create an executable Playwright script from the best chromosome
 if __name__ == "__main__":
+    
+    # potential todo: experiment with different hyperparameters
     ga = MessyGeneticAlgorithm(
         url="https://the-internet.herokuapp.com/",
         population_size=50,
         generations=50,
         mutation_rate=1.0
     )
-    ga.run()
+    best_chromosome = ga.run()
+
+    if best_chromosome and best_chromosome.fitness is not None:
+        print(f"\nBest chromosome found: {best_chromosome}:")
+    else:
+        print("\nNo effective chromosome was found.")
