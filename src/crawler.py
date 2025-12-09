@@ -1,3 +1,5 @@
+#src/crawler.py
+
 from playwright.sync_api import Page, Locator, sync_playwright
 from typing import List, Optional
 
@@ -48,6 +50,8 @@ class Crawler:
 
         return found_elements
 
+
+#Test the crawler
 if __name__ == "__main__":
     url = "https://the-internet.herokuapp.com/login"
     print(f"Crawling {url}")
