@@ -1,3 +1,5 @@
+#chromosome.py
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -143,7 +145,3 @@ class Chromosome:
 
     def add_action(self, action: Action):
         self.actions.append(action)
-
-
-
-
