@@ -1,4 +1,4 @@
-#chromosome.py
+#src/chromosome.py
 
 from dataclasses import dataclass
 from enum import Enum
