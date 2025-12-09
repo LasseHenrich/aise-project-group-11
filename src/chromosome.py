@@ -4,6 +4,7 @@ from typing import Optional
 import copy
 
 
+# potential todo: Add more action types. Also SCROLL is currently not actually supported in the code
 class ActionType(Enum):
     """
     Types of UI interactions
@@ -13,6 +14,7 @@ class ActionType(Enum):
     SCROLL = "scroll"
     # ...add more as we go along
 
+# potential todo: Support more types
 class UIElementType(Enum):
     """
     Types of UI elements
@@ -55,7 +57,7 @@ class UIElement:
         return f"{self.element_type.value}[unknown selector]"
 
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return UIElement(
             element_type=self.element_type,
             id=self.id,
@@ -81,24 +83,45 @@ class Action:
         else:
             return f"{self.action_type.value.upper()}"
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return Action(
             action_type=self.action_type,
-            target=copy.deepcopy(self.target),
+            target=copy.deepcopy(self.target, memo) if self.target is not None else None,
             data=self.data
+        )
+
+@dataclass
+class PageState:
+    """
+    Represents the state of a web page at a given point in time.
+    Note that the hash is very specific, resulting in lots of unique PageStates.
+    This results in a "pessimistic" crossover, which prioritizes generating valid sequences over doing it
+    based on some chance (which would be "optimistically") ~> we should experiment with different strategies
+    """
+    hash: str
+    available_elements: list[UIElement]
+
+    def __deepcopy__(self, memo):
+        return PageState(
+            hash=self.hash,
+            available_elements=[copy.deepcopy(element, memo) for element in self.available_elements]
         )
 
 class Chromosome:
     """
     Sequence of actions that can be executed on a UI
     """
+    actions: list[Action]
+    all_states: list[PageState]
+    fitness: Optional[float]
 
-    def __init__(self, actions=None):
-        if actions is None:
-            actions = []
+    def __init__(self, actions, all_states=None, fitness=None):
+        if all_states is None:
+            all_states = [] # usually to be filled during execution, initial states + all resulting states
+
         self.actions = actions
-        self.fitness = None
-        # ...potentially more attributes for tracking performance metrics
+        self.all_states = all_states
+        self.fitness = fitness
 
     def __len__(self):
         return len(self.actions)
@@ -108,11 +131,14 @@ class Chromosome:
 
     def __str__(self):
         fitness_str = f"{self.fitness:.3f}" if self.fitness is not None else "??"
-        return f"Chromosome(fitness={fitness_str}, length={len(self)}])"
+        return (f"Chromosome(fitness={fitness_str}, length={len(self)}, "
+                f"actions=[\n{',\n'.join(str(a) for a in self.actions)}\n])")
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return Chromosome(
-            actions=[copy.deepcopy(action) for action in self.actions]
+            actions=[copy.deepcopy(action, memo) for action in self.actions],
+            all_states=[copy.deepcopy(state, memo) for state in self.all_states],
+            fitness=self.fitness
         )
 
     def add_action(self, action: Action):

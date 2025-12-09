@@ -2,6 +2,7 @@ import copy
 from types import CodeType
 
 from chromosome import Chromosome, Action, UIElement, ActionType, UIElementType
+from src.runner import TestRunner
 
 
 class CodeGenerator:
@@ -48,7 +49,7 @@ class CodeGenerator:
         """
         Single action to code string
         """
-        target_selector = self._get_selector(action.target) if action.target else None
+        target_selector = TestRunner.get_selector(action.target) if action.target else None
 
         if action.action_type == ActionType.CLICK:
             if not target_selector:
@@ -69,27 +70,6 @@ class CodeGenerator:
             # todo: improve scroll handling by using content as custom scroll amount
 
         raise ValueError(f"Unhandled action type: {action.action_type}")
-
-    def _get_selector(self, ui_element: UIElement) -> str:
-        """
-        Determines and returns the best selector for a UIElement.
-        Hierarchy: id > name > class_name > text_content
-        """
-        if ui_element.id:
-            return f"#{ui_element.id}"
-
-        if ui_element.name:
-            return f"[name='{ui_element.name}']"
-
-        if ui_element.class_name:
-            return f".{'.'.join(ui_element.class_name.split())}" # "class1 class2" -> ".class1.class2"
-
-        if ui_element.text_content:
-            safe_text_content = ui_element.text_content.replace("'", "\\'") # to avoid injection issues
-            return f"text='{safe_text_content}'"
-
-        raise ValueError("Unhandled case:\n"
-                         "UIElement must have at least one identifiable attribute for selector generation.")
 
 
 # Example usage
