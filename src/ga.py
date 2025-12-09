@@ -302,7 +302,7 @@ class MessyGeneticAlgorithm:
 
 
 # todo: using code_gen to create an executable Playwright script from the best chromosome
-# Test GA
+# Example usage
 if __name__ == "__main__":
     
     # potential todo: experiment with different hyperparameters
