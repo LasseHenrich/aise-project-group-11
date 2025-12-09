@@ -165,7 +165,8 @@ class MessyGeneticAlgorithm:
         # Extra score from FitnessCalculator
         extra_score = self.fitness_calculator.evaluate(chromosome, execution_result)
 
-        fitness = base_fitness + bug_bounty + len_penalty + extra_score
+        original_fitness = base_fitness + bug_bounty + len_penalty
+        fitness = original_fitness + 0.5 * extra_score
         
         return max(0, fitness)
 
