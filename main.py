@@ -3,6 +3,7 @@
 import argparse
 from src.ga import MessyGeneticAlgorithm
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run Messy GA-based GUI test generation on a target website."
@@ -42,7 +43,7 @@ def parse_args() -> argparse.Namespace:
         "--mutation-rate",
         type=float,
         default=1.0,
-        help="Mutation rate (0.0–1.0).",
+        help="Mutation rate (0.0-1.0).",
     )
     parser.add_argument(
         "--elitism",
