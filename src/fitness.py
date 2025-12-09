@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from chromosome import Chromosome
+from src.chromosome import Chromosome
 
 
 class FitnessCalculator:
