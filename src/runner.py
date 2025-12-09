@@ -127,7 +127,6 @@ class TestRunner:
             self.page.remove_listener('response', handle_response)
             self.page.remove_listener('crash', handle_crash)
 
-
     def execute_action(self, action: Action):
         """
         Execute a single action on the page.
