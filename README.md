@@ -1,12 +1,11 @@
 # AISE Project - Group 11
 **Automated Web UI Testing using a Messy Genetic Algorithm**
 
-## About the Project
 This project attempts to automatically generate web UI test sequences using a Messy Genetic Algorithm.  
 The system crawls a webpage, identifies interactable elements, evolves test chromosomes through selection–crossover–mutation, and evaluates them using fitness based on exploration, state diversity, and bug discovery.  
 The output is an automatically generated high-value test scenario for real websites.
 
-### Features
+## Features
 - Automatic crawling of interactable UI elements  
 - Messy Genetic Algorithm with:
   - Context-aware crossover (cut & splice using page states)
@@ -19,7 +18,7 @@ The output is an automatically generated high-value test scenario for real websi
 - TestRunner using Playwright to safely execute chromosomes
 - Code generator for exporting the best chromosome as a standalone test script
 
-### Project Structure
+## Project Structure
 ```
 .
 └── src/
@@ -33,7 +32,7 @@ The output is an automatically generated high-value test scenario for real websi
 ├── test_runner.py
 
 ```
-### System Workflow
+## System Workflow
 Crawler → Initial Chromosomes → Messy GA → Runner Executes Chromosomes → Fitness Calculation → New Generation → Best Test
 
 ## How to Run
@@ -83,6 +82,6 @@ CLICK button[class='submit']
 ## Authors 
 - Lasse Henrich  
 - Johan Rönnquist  
-- Kim Hyokyung  
+- Hyokyung Kim  
 - Seohyun Ahn  
 _Created at KAIST, 2025._
