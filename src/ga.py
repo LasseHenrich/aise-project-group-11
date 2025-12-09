@@ -108,6 +108,7 @@ class MessyGeneticAlgorithm:
             resulting_states.append(state)
         return [initial_state] + resulting_states
 
+    # potential todo: Adpot ideas from fitness.py
     def _calculate_fitness_from_run(self, chromosome: Chromosome, run_results: dict) -> float:
         if run_results['crashed']: # there are many safeguards against crashes; these should only occur because of non-determinism
             return -1  # should not be selected for reproduction
