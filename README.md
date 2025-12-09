@@ -23,10 +23,11 @@ The output is an automatically generated high-value test scenario for real websi
 .
 └── src/
     ├── chromosome.py     # UI elements, actions, chromosomes
+    ├── code_gen.py       # Convert a chromosome into standalone test code
     ├── crawler.py        # Extract clickable elements from a webpage
-    ├── runner.py         # Executes chromosomes in Playwright
+    ├── fitness.py        # Supplemental scoring for exploration/bugs
     ├── ga.py             # Messy genetic algorithm
-    └── code_gen.py       # Convert a chromosome into standalone test code
+    └── runner.py         # Executes chromosomes in Playwright      
 ├── main.py           # Entry point for running the GA
 ├── playwright_setup_test.py
 ├── test_runner.py
