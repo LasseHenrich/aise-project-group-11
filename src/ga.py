@@ -1,9 +1,11 @@
 # src/ga.py
+
 import copy
 import random
 from src.chromosome import Chromosome, Action, ActionType, UIElementType, PageState
 from src.runner import TestRunner
 from src.crawler import Crawler
+
 
 class MessyGeneticAlgorithm:
     """
