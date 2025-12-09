@@ -1,7 +1,7 @@
+#main.py
+
 import argparse
-
 from src.ga import MessyGeneticAlgorithm
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
