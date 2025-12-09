@@ -3,7 +3,7 @@
 import copy
 from types import CodeType
 
-from chromosome import Chromosome, Action, UIElement, ActionType, UIElementType
+from src.chromosome import Chromosome, Action, UIElement, ActionType, UIElementType
 from src.runner import TestRunner
 
 
