@@ -19,13 +19,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--pop-size",
         type=int,
-        default=10,
+        default=50,
         help="Population size for the GA.",
     )
     parser.add_argument(
         "--generations",
         type=int,
-        default=3,
+        default=50,
         help="Number of generations to run.",
     )
     parser.add_argument(
