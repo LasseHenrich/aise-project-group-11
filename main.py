@@ -1,4 +1,4 @@
-#main.py
+# main.py
 
 import argparse
 from src.ga import MessyGeneticAlgorithm
