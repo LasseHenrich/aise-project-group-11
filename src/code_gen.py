@@ -1,6 +1,7 @@
 # src/code_gen.py
 
 import copy
+import json
 from types import CodeType
 
 from src.chromosome import Chromosome, Action, UIElement, ActionType, UIElementType
@@ -37,8 +38,8 @@ class CodeGenerator:
 
         # teardown
         lines.append("")
-        lines.append(f"    page.wait_for_load_state('networkidle')") # ensure page is stable before closing
-        lines.append(f"    browser.close()")
+        lines.append("    page.wait_for_load_state('networkidle')") # ensure page is stable before closing
+        lines.append("    browser.close()")
 
         # compile and return
         full_code_str = "\n".join(lines)
@@ -56,19 +57,19 @@ class CodeGenerator:
         if action.action_type == ActionType.CLICK:
             if not target_selector:
                 raise ValueError("CLICK action requires a target UIElement.")
-            return f"page.click('{target_selector}')"
-
+            return f"page.click({json.dumps(target_selector)})"
+            
         if action.action_type == ActionType.EDIT:
             if not target_selector:
                 raise ValueError("EDIT action requires a target UIElement.")
 
             data_content = action.data if action.data else ""
-            return f"page.fill('{target_selector}', '{data_content}')"
-
+            return f"page.fill({json.dumps(target_selector)}, {json.dumps(data_content)})"
+            
         if action.action_type == ActionType.SCROLL:
             if not target_selector:
                 return "page.mouse.wheel(0, 500)"
-            return f"page.locator('{target_selector}').scroll_into_view_if_needed()"
+            return f"page.locator({json.dumps(target_selector)}).scroll_into_view_if_needed()"
             # todo: improve scroll handling by using content as custom scroll amount
 
         raise ValueError(f"Unhandled action type: {action.action_type}")
@@ -80,8 +81,11 @@ if __name__ == "__main__":
     input_pass = UIElement(id="password", class_name="", element_type=UIElementType.INPUT)
     btn_login = UIElement(id="", class_name="radius", element_type=UIElementType.BUTTON)
     btn_logout = copy.copy(btn_login)
-    success_message = UIElement(id="flash", class_name="flash success",
-                                           element_type=UIElementType.LINK)
+    success_message = UIElement(
+        id="flash",
+        class_name="flash success",
+        element_type=UIElementType.LINK,
+    )
 
     a1 = Action(action_type=ActionType.EDIT, target=input_user, data="tomsmith")
     a2 = Action(action_type=ActionType.EDIT, target=input_pass, data="SuperSecretPassword!")
@@ -89,7 +93,11 @@ if __name__ == "__main__":
     a4 = Action(action_type=ActionType.CLICK, target=btn_logout)
     sample_chromosome = Chromosome(actions=[a1, a2, a3, a4])
 
-    generator = CodeGenerator("https://the-internet.herokuapp.com/login", headless=False, print_generated_code=True)
+    generator = CodeGenerator(
+        "https://the-internet.herokuapp.com/login",
+        headless=False,
+        print_generated_code=True,
+    )
     generated_code = generator.generate_code(sample_chromosome)
 
     print("Running generated Playwright code")
