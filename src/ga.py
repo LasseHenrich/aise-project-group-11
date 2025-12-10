@@ -6,7 +6,6 @@ from src.chromosome import Chromosome, Action, ActionType, UIElementType, PageSt
 
 from src.runner import TestRunner
 from src.crawler import Crawler
-from src.fitness import FitnessCalculator
 
 
 class MessyGeneticAlgorithm:
@@ -27,8 +26,6 @@ class MessyGeneticAlgorithm:
         self.population: list[Chromosome] = []
         self.runner = TestRunner(url, headless=True)
         self.crawler = Crawler()
-
-        self.fitness_calculator = FitnessCalculator()
 
     def _initialize_population(self):
         """
@@ -114,61 +111,79 @@ class MessyGeneticAlgorithm:
             resulting_states.append(state)
         return [initial_state] + resulting_states
 
-    # potential todo: Adpot ideas from fitness.py
     def _calculate_fitness_from_run(self, chromosome: Chromosome, run_results: dict) -> float:
-        if run_results['crashed']: # there are many safeguards against crashes; these should only occur because of non-determinism
-            return -1  # should not be selected for reproduction
+        """
+        Bug-first:
+          - Big rewards for HTTP 5xx / 4xx / JS errors (with noise filtering)
+        Exploration:
+          - Unique states (primary) + unique URLs (secondary)
+        Efficiency:
+          - Length is free up to a threshold, then penalized
+        """
+        if run_results.get("crashed"): # there are many safeguards against crashes; these should only occur because of non-determinism
+            return -1.0 # should not be selected for reproduction
 
-        # Calculate base fitness from exploration (new states)
-        base_fitness = len(run_results['unique_states']) * 50
+        unique_states = run_results.get("unique_states", []) or []
+        # support either "visited_urls" or "urls"
+        urls = run_results.get("visited_urls", []) or run_results.get("urls", []) or []
+        seq_len = len(chromosome.actions)
+
+        # Exploration weights
+        w_state = 50.0
+        w_url = 5.0 # small bonus per unique URL
+
+        # Bug rewards
+        reward_http_5xx = 1000.0
+        reward_http_4xx = 20.0
+        reward_js_error = 150.0
+
+        # Length / redundancy control
+        length_threshold = 3 # actions up to this length are "free"
+        w_len_penalty = 1.0 # penalty per extra action beyond threshold
+
+        # Optional cap on total bug score (None = uncapped, pure bug-first)
+        bug_score_cap = None
+
+        unique_state_count = len(unique_states)
+        unique_url_count = len(set(urls))
+
+        state_score = w_state * unique_state_count
+        url_score = w_url * unique_url_count
+
+        exploration_score = state_score + url_score
+
+        http_errors = run_results.get("http_errors", []) or []
+        js_errors = run_results.get("js_errors", []) or []
 
         # Calculate bug bounty
-        bug_bounty = 0
+        bug_score = 0.0
 
-        # Collect filtered (non-noisy) errors
-        filtered_errors = []
-
-        for error in run_results.get("http_errors", []):
-            status = error["status"]
-            url = error["url"]
-
+        for error in http_errors:
+            status = error.get("status")
+            url = error.get("url", "")
             if self._error_is_noise(url):
                 continue
 
-            if 500 <= status < 600:
-                bug_bounty += 1000  # jackpot
-            elif 400 <= status < 500:
-                bug_bounty += 20  # broken links / bad requests...
+            if 500 <= status < 600: # jackpot
+                bug_score += reward_http_5xx
+            elif 400 <= status < 500: # broken links / bad requests...
+                bug_score += reward_http_4xx
 
-            filtered_errors.append(error)
-
-        for error in run_results.get("js_errors", []):
-            url = error["url"]
-
-            if not self._error_is_noise(url):
-                bug_bounty += 150  # actual JS (or CSS) crashes
-                filtered_errors.append(error)   # add to list for FitnessCalculator
+        for error in js_errors:
+            url = error.get("url", "")
+            if self._error_is_noise(url):
+                continue
+            bug_score += reward_js_error # actual JS (or CSS) crashes
             # otherwise probably blocked trackers again...
 
-        len_penalty = -len(chromosome.actions) # low valuation, kind of functions as a tiebreaker
+        if bug_score_cap is not None:
+            bug_score = min(bug_score, bug_score_cap)
 
-        # Build execution_result in the shape fitness.py expects
-        urls = run_results.get("visited_urls", []) or run_results.get("urls", [])
-        unique_states = run_results.get("unique_states", [])
+        extra_len = max(0, seq_len - length_threshold)
+        len_penalty = w_len_penalty * extra_len # low valuation, kind of functions as a tiebreaker
 
-        execution_result = {
-            "urls": urls,
-            "states": [state.hash for state in unique_states],  # use state hash as ID
-            "errors": filtered_errors,
-        }
-
-        # Extra score from FitnessCalculator
-        extra_score = self.fitness_calculator.evaluate(chromosome, execution_result)
-
-        original_fitness = base_fitness + bug_bounty + len_penalty
-        fitness = original_fitness + 0.5 * extra_score  # weight for extra_score can be changed after experiments
-        
-        return max(0, fitness)
+        fitness = exploration_score + bug_score - len_penalty
+        return max(0.0, fitness)
 
     @staticmethod
     def _error_is_noise(url: str) -> bool:
