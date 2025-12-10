@@ -25,7 +25,6 @@ The output is an automatically generated high-value test scenario for real websi
     ├── chromosome.py     # UI elements, actions, chromosomes
     ├── code_gen.py       # Convert a chromosome into standalone test code
     ├── crawler.py        # Extract clickable elements from a webpage
-    ├── fitness.py        # Supplemental scoring for exploration/bugs
     ├── ga.py             # Messy genetic algorithm
     └── runner.py         # Executes chromosomes in Playwright      
 ├── main.py           # Entry point for running the GA
