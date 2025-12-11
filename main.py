@@ -2,6 +2,7 @@
 
 import argparse
 from src.ga import MessyGeneticAlgorithm
+from src.code_gen import CodeGenerator
 
 
 def parse_args() -> argparse.Namespace:
@@ -86,6 +87,18 @@ def main() -> None:
         print("Actions:")
         for i, action in enumerate(best_chromosome.actions):
             print(f"  Step {i+1}: {action}")
+
+        print("\n=== Generating standalone Playwright test for best chromosome ===")
+        generator = CodeGenerator(
+            url=args.url,
+            headless=False,  # if True: Doesn't show browser
+            print_generated_code=True # if False: Doesn't print code
+        )
+        generated_code = generator.generate_code(best_chromosome)
+
+        print("\n=== Replaying generated test script once ===\n")
+        exec(generated_code)
+
     else:
         print("No effective chromosome was found.")
 
