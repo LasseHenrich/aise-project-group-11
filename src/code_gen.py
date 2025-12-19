@@ -8,6 +8,10 @@ from src.chromosome import Chromosome, Action, UIElement, ActionType, UIElementT
 from src.runner import TestRunner
 
 
+"""
+Future work:
+Improve scroll handling by using content as custom scroll amount
+"""
 class CodeGenerator:
     """
     Converts a chromosome into executable Playwright python code.
@@ -70,7 +74,6 @@ class CodeGenerator:
             if not target_selector:
                 return "page.mouse.wheel(0, 500)"
             return f"page.locator({json.dumps(target_selector)}).scroll_into_view_if_needed()"
-            # todo: improve scroll handling by using content as custom scroll amount
 
         raise ValueError(f"Unhandled action type: {action.action_type}")
 
