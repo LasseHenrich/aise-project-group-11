@@ -11,9 +11,9 @@ from src.crawler import Crawler
 class MessyGeneticAlgorithm:
     """
     Central GA class implementing a messy genetic algorithm.
-    Potential todo: Add support for a "static" start action sequence, like a login, which is executed for every chromosome.
     """
 
+    # potential todo: Add support for a "static" start action sequence, like a login, which is executed for every chromosome.
     def __init__(self, url: str, population_size: int = 50, generations: int = 100, tournament_size: int = 5, max_chromosome_length: int = 30, mutation_rate: float = 0.1, elitism_count: int = 1):
         self.url = url
         self.population_size = population_size
@@ -341,7 +341,6 @@ class MessyGeneticAlgorithm:
         return best_overall_chromosome
 
 
-# todo: using code_gen to create an executable Playwright script from the best chromosome
 # Example usage
 if __name__ == "__main__":
     
