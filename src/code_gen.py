@@ -12,6 +12,7 @@ from src.runner import TestRunner
 Future work:
 Improve scroll handling by using content as custom scroll amount
 """
+
 class CodeGenerator:
     """
     Converts a chromosome into executable Playwright python code.
