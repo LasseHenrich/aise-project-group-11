@@ -8,12 +8,16 @@ from src.runner import TestRunner
 from src.crawler import Crawler
 
 
+"""
+Future work:
+Add support for a "static" start action sequence, like a login, which is executed for every chromosome.
+"""
+
 class MessyGeneticAlgorithm:
     """
     Central GA class implementing a messy genetic algorithm.
     """
 
-    # potential todo: Add support for a "static" start action sequence, like a login, which is executed for every chromosome.
     def __init__(self, url: str, population_size: int = 50, generations: int = 100, tournament_size: int = 5, max_chromosome_length: int = 30, mutation_rate: float = 0.1, elitism_count: int = 1):
         self.url = url
         self.population_size = population_size
@@ -240,7 +244,6 @@ class MessyGeneticAlgorithm:
 
         return child
 
-    # potential todo: experiment with different strategies / rates
     def _mutate(self, chromosome: Chromosome) -> Chromosome:
         """
         Applies random changes to a chromosome based on the mutation rate.
@@ -344,7 +347,6 @@ class MessyGeneticAlgorithm:
 # Example usage
 if __name__ == "__main__":
     
-    # potential todo: experiment with different hyperparameters
     ga = MessyGeneticAlgorithm(
         url="https://the-internet.herokuapp.com/",
         population_size=50,
