@@ -6,7 +6,11 @@ from typing import Optional
 import copy
 
 
-# potential todo: Add more action types. Also SCROLL is currently not actually supported in the code
+"""
+Future work:
+Implement more action and element types. Support SCROLL in code.
+"""
+
 class ActionType(Enum):
     """
     Types of UI interactions
@@ -14,9 +18,7 @@ class ActionType(Enum):
     CLICK = "click"
     EDIT = "edit"
     SCROLL = "scroll"
-    # ...add more as we go along
 
-# potential todo: Support more types
 class UIElementType(Enum):
     """
     Types of UI elements
@@ -24,7 +26,6 @@ class UIElementType(Enum):
     BUTTON = "button"
     INPUT = "input"
     LINK = "link"
-    # ...add more as we go along
 
 @dataclass
 class UIElement:
