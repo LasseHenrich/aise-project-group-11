@@ -5,6 +5,11 @@ from src.ga import MessyGeneticAlgorithm
 from src.code_gen import CodeGenerator
 
 
+"""
+Future work:
+Experiment with different hyperparameters.
+"""
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run Messy GA-based GUI test generation on a target website."
